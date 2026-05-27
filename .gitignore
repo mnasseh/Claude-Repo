@@ -4,6 +4,9 @@ attio_import.csv
 
 # Node
 node_modules/
+dist/
+.vite/
+*.log
 
 # Python
 __pycache__/

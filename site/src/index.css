@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #0a0a0f;
+  color: #f5f5f7;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(94, 242, 255, 0.25);
+  color: #fff;
+}
+
+/* Animated mesh gradient — pure CSS, GPU-cheap */
+.mesh-gradient {
+  background:
+    radial-gradient(at 20% 20%, rgba(34, 211, 238, 0.22) 0px, transparent 50%),
+    radial-gradient(at 80% 10%, rgba(94, 242, 255, 0.18) 0px, transparent 50%),
+    radial-gradient(at 70% 80%, rgba(232, 178, 122, 0.12) 0px, transparent 55%),
+    radial-gradient(at 10% 90%, rgba(8, 145, 178, 0.25) 0px, transparent 50%),
+    #06060a;
+  animation: mesh-drift 18s ease-in-out infinite alternate;
+}
+
+@keyframes mesh-drift {
+  0% {
+    background-position: 0% 0%, 100% 0%, 100% 100%, 0% 100%, 0 0;
+  }
+  100% {
+    background-position: 10% 5%, 90% 10%, 80% 90%, 5% 95%, 0 0;
+  }
+}
+
+/* Floating noise overlay for cinematic grain */
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.7'/></svg>");
+}
+
+/* Scan line that crosses sections */
+.scan-line {
+  position: absolute;
+  inset-inline: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(94, 242, 255, 0.6) 50%,
+    transparent
+  );
+  filter: blur(0.5px);
+}
+
+/* Card with luminous 1px border on hover */
+.card-tech {
+  position: relative;
+  background: linear-gradient(180deg, rgba(26, 26, 36, 0.6), rgba(10, 10, 15, 0.6));
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-tech::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(94, 242, 255, 0.5),
+    transparent 40%,
+    transparent 60%,
+    rgba(232, 178, 122, 0.3)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.card-tech:hover::before {
+  opacity: 1;
+}
+
+.card-tech:hover {
+  transform: translateY(-4px);
+  border-color: rgba(94, 242, 255, 0.18);
+}
+
+/* Terminal screen frame */
+.terminal-frame {
+  background: linear-gradient(180deg, rgba(16, 16, 25, 0.95), rgba(6, 6, 10, 0.95));
+  border: 1px solid rgba(94, 242, 255, 0.15);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    0 30px 80px -30px rgba(94, 242, 255, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid #5ef2ff;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Hide scrollbar but keep functional */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* prefers-reduced-motion: tame everything */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .mesh-gradient {
+    animation: none;
+  }
+}
