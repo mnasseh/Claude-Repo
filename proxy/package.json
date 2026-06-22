@@ -1,0 +1,11 @@
+{
+  "name": "drcal-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Proxy Anthropic (Claude) pour l'app Dr Cal — garde la clé API côté serveur.",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.mjs"
+  }
+}
