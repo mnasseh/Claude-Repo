@@ -4,3 +4,7 @@ attio_import.csv
 
 # Alpha Mailer runtime artifacts (contain recipient addresses)
 alpha_mailer_audit.log
+
+# Python build artifacts
+__pycache__/
+*.pyc
