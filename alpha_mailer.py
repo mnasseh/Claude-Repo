@@ -10,18 +10,18 @@ Garde-fous (identiques au test valide) :
   - Journal d'audit de chaque envoi (append-only)
 
 Aucun secret n'est ecrit dans le code : les identifiants sont lus depuis
-l'environnement.
+l'environnement, ou depuis un fichier .env (git-ignore) charge au demarrage.
 
   export ALPHA_MAILER_USER="m.nasseh@grpalpha.com"
   export ALPHA_MAILER_APP_PASSWORD="xxxx xxxx xxxx xxxx"   # mot de passe d'appli
   export ALPHA_MAILER_WHITELIST="m.nasseh@grpalpha.com,contact@grpalpha.com"
 
 Usage :
+  python alpha_mailer.py --check                 # verifie la config
+  python alpha_mailer.py --selftest              # rejoue le mail de verification
   python alpha_mailer.py --to m.nasseh@grpalpha.com \
       --subject "Sujet" --body "Corps du message"
-
-  # Rejoue le mail de verification du workflow :
-  python alpha_mailer.py --selftest
+  python alpha_mailer.py --cron-line             # ligne crontab d'envoi programme
 """
 
 import argparse
@@ -38,7 +38,31 @@ SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 465  # SSL
 
 DAILY_CAP = 30
-AUDIT_LOG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "alpha_mailer_audit.log")
+_HERE = os.path.dirname(os.path.abspath(__file__))
+AUDIT_LOG = os.path.join(_HERE, "alpha_mailer_audit.log")
+ENV_FILE = os.environ.get("ALPHA_MAILER_ENV_FILE", os.path.join(_HERE, ".env"))
+
+
+def load_dotenv(path=ENV_FILE):
+    """Charge un fichier .env (KEY=VALUE) sans dependance externe.
+
+    Les variables deja definies dans l'environnement ont priorite : le .env
+    ne les ecrase pas. Ligne vide et commentaires (#) ignores. C'est une
+    facon sure de fournir le secret dans l'environnement sans le coller dans
+    le chat — le fichier est git-ignore.
+    """
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
 
 
 def _env(name, required=True):
@@ -165,7 +189,19 @@ def main():
                    help="Verifie la config (secrets presents) sans rien envoyer")
     p.add_argument("--dry-run", action="store_true",
                    help="Applique les garde-fous sans se connecter au SMTP")
+    p.add_argument("--cron-line", action="store_true",
+                   help="Affiche une ligne crontab prete a coller (envoi programme)")
     args = p.parse_args()
+
+    load_dotenv()
+
+    if args.cron_line:
+        script = os.path.abspath(__file__)
+        py = sys.executable or "python3"
+        # Tous les jours a 8h00 : rejoue le self-test comme sonde de sante.
+        print(f"0 8 * * * cd {_HERE} && {py} {script} --selftest >> "
+              f"{os.path.join(_HERE, 'alpha_mailer_cron.log')} 2>&1")
+        return
 
     if args.check:
         sys.exit(0 if check_config() else 1)

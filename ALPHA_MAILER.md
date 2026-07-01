@@ -27,27 +27,53 @@ python alpha_mailer.py --selftest    # rejoue le mail de vérification
 python alpha_mailer.py --to m.nasseh@grpalpha.com --subject "Sujet" --body "Corps"
 ```
 
-## Envoyer aussi depuis les sessions cloud (Claude Code on the web)
+Le secret peut être fourni de **deux façons** (les deux sont sûres : jamais dans
+le chat, jamais commitées). Les variables d'environnement ont priorité sur le
+fichier `.env`.
 
-Pour que l'envoi fonctionne aussi depuis l'environnement cloud, le secret doit
-être ajouté **une seule fois** dans la configuration de l'environnement — jamais
-collé dans le chat.
+### Méthode 1 — Secrets de l'environnement (recommandée, durable)
 
-1. Ouvre les réglages de l'environnement cloud : **Settings → Environment →
-   Variables d'environnement / Secrets** (voir la doc :
+Persiste entre les sessions, chiffré au repos.
+
+1. Réglages de l'environnement cloud : **Settings → Environment → Variables
+   d'environnement / Secrets** (doc :
    https://code.claude.com/docs/en/claude-code-on-the-web).
-2. Ajoute les trois variables ci-dessus. Marque `ALPHA_MAILER_APP_PASSWORD`
-   comme **secret** (masqué, chiffré au repos).
-3. Relance une session, puis vérifie sans rien envoyer :
-   ```bash
-   python alpha_mailer.py --check
-   ```
-   Quand les trois lignes affichent `OK`, l'envoi autonome est disponible ici
-   aussi :
-   ```bash
-   python alpha_mailer.py --selftest
-   ```
+2. Ajoute les trois variables ci-dessus ; marque `ALPHA_MAILER_APP_PASSWORD`
+   comme **secret**.
+3. Relance une session.
 
-> Rotation : si le mot de passe d'application est régénéré côté Google, il
-> suffit de mettre à jour `ALPHA_MAILER_APP_PASSWORD` dans les secrets de
-> l'environnement. Rien à changer dans le code.
+### Méthode 2 — Fichier `.env` (rapide, local)
+
+Crée un fichier `.env` à la racine du repo (il est **git-ignoré**, jamais
+commité). `alpha_mailer.py` le charge automatiquement au démarrage.
+
+```
+ALPHA_MAILER_USER=m.nasseh@grpalpha.com
+ALPHA_MAILER_APP_PASSWORD=xxxx xxxx xxxx xxxx
+ALPHA_MAILER_WHITELIST=m.nasseh@grpalpha.com
+```
+
+> Note : dans un environnement cloud éphémère, un `.env` créé pendant une
+> session ne survit pas à la reconstruction du conteneur — pour du durable,
+> utilise la Méthode 1.
+
+### Vérifier puis tester
+
+```bash
+python alpha_mailer.py --check      # les 3 lignes doivent afficher OK
+python alpha_mailer.py --selftest   # envoie réellement le mail de vérification
+```
+
+## Envoi programmé (cron)
+
+Génère la ligne crontab prête à coller (envoi quotidien du self-test à 8h00
+comme sonde de santé) :
+
+```bash
+python alpha_mailer.py --cron-line
+crontab -e   # colle la ligne affichée
+```
+
+> Rotation : si le mot de passe d'application est régénéré côté Google, mets
+> simplement à jour `ALPHA_MAILER_APP_PASSWORD` (secret d'environnement ou
+> `.env`). Rien à changer dans le code.

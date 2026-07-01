@@ -4,6 +4,10 @@ attio_import.csv
 
 # Alpha Mailer runtime artifacts (contain recipient addresses)
 alpha_mailer_audit.log
+alpha_mailer_cron.log
+
+# Alpha Mailer credentials — NEVER commit
+.env
 
 # Python build artifacts
 __pycache__/
