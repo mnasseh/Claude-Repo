@@ -156,12 +156,36 @@ def send(to, subject, body, dry_run=False):
 
     password = _env("ALPHA_MAILER_APP_PASSWORD")
     ctx = ssl.create_default_context()
-    with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ctx) as smtp:
-        smtp.login(user, password)
-        smtp.send_message(msg)
+    try:
+        _smtp_send(msg, user, password, ctx)
+    except OSError as exc:
+        # Reseau sortant SMTP indisponible (ex. environnement cloud dont la
+        # sortie ne passe que par un proxy HTTPS). Message clair, pas de trace.
+        audit({"status": "error", "reason": "smtp_unreachable", "to": recipient,
+               "detail": str(exc)})
+        sys.exit(
+            "[alpha-mailer] Impossible de joindre le SMTP Gmail (ports 465/587 "
+            "bloques dans cet environnement).\n"
+            "L'envoi SMTP direct ne fonctionne que la ou le reseau sortant est "
+            "ouvert (ex. ton ordinateur). Depuis un environnement cloud a sortie "
+            "HTTPS seule, utilise le cron sur ta machine (voir ALPHA_MAILER.md)."
+        )
 
     audit({"status": "sent", "to": recipient, "subject": subject})
     print(f"[alpha-mailer] Envoye a {recipient} ({used + 1}/{DAILY_CAP} aujourd'hui)")
+
+
+def _smtp_send(msg, user, password, ctx):
+    """Envoie via SSL (465), avec repli STARTTLS (587) si besoin."""
+    try:
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ctx, timeout=20) as smtp:
+            smtp.login(user, password)
+            smtp.send_message(msg)
+    except OSError:
+        with smtplib.SMTP(SMTP_HOST, 587, timeout=20) as smtp:
+            smtp.starttls(context=ctx)
+            smtp.login(user, password)
+            smtp.send_message(msg)
 
 
 SELFTEST_SUBJECT = "✅ Test Alpha Mailer — envoi autonome"

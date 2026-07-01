@@ -64,6 +64,20 @@ python alpha_mailer.py --check      # les 3 lignes doivent afficher OK
 python alpha_mailer.py --selftest   # envoie réellement le mail de vérification
 ```
 
+## ⚠️ Limite : envoi SMTP impossible depuis un environnement cloud
+
+Le SMTP (ports 465 / 587) est **bloqué** dans l'environnement cloud Claude Code
+on the web : la sortie réseau ne passe que par un proxy HTTPS. `alpha_mailer.py`
+détecte ce cas et affiche un message clair plutôt qu'une stacktrace.
+
+Conséquence : l'**envoi réel** ne fonctionne que là où le réseau sortant est
+ouvert — c'est-à-dire **ta propre machine** (là où le test du 2026-07-01 a
+réussi). Depuis le cloud, on peut préparer un **brouillon** via le connecteur
+Gmail (HTTPS), mais pas envoyer par SMTP.
+
+Pour un envoi 100 % autonome, planifie le script **sur ton ordinateur** (cron
+ci-dessous) : il tourne chez toi, où le réseau le permet.
+
 ## Envoi programmé (cron)
 
 Génère la ligne crontab prête à coller (envoi quotidien du self-test à 8h00
