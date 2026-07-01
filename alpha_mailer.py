@@ -48,6 +48,24 @@ def _env(name, required=True):
     return val
 
 
+def check_config():
+    """Preflight : verifie la config sans jamais afficher le secret."""
+    required = ["ALPHA_MAILER_USER", "ALPHA_MAILER_APP_PASSWORD", "ALPHA_MAILER_WHITELIST"]
+    missing = [k for k in required if not (os.environ.get(k) or "").strip()]
+    print("[alpha-mailer] Preflight de configuration :")
+    for k in required:
+        present = bool((os.environ.get(k) or "").strip())
+        # On confirme seulement la PRESENCE, jamais la valeur du secret.
+        print(f"  - {k:<28} {'OK' if present else 'MANQUANT'}")
+    if missing:
+        print(f"\n[alpha-mailer] Config incomplete : {', '.join(missing)}")
+        print("Ajoute ces variables dans les secrets de l'environnement (voir ALPHA_MAILER.md).")
+        return False
+    print(f"\n[alpha-mailer] Config complete. Envois aujourd'hui : {sends_today()}/{DAILY_CAP}")
+    print("Pret a envoyer : python alpha_mailer.py --selftest")
+    return True
+
+
 def load_whitelist():
     raw = _env("ALPHA_MAILER_WHITELIST")
     wl = {a.strip().lower() for a in raw.split(",") if a.strip()}
@@ -143,9 +161,14 @@ def main():
     p.add_argument("--body", help="Corps du message (texte brut)")
     p.add_argument("--selftest", action="store_true",
                    help="Rejoue le mail de verification vers ALPHA_MAILER_USER")
+    p.add_argument("--check", action="store_true",
+                   help="Verifie la config (secrets presents) sans rien envoyer")
     p.add_argument("--dry-run", action="store_true",
                    help="Applique les garde-fous sans se connecter au SMTP")
     args = p.parse_args()
+
+    if args.check:
+        sys.exit(0 if check_config() else 1)
 
     if args.selftest:
         to = args.to or _env("ALPHA_MAILER_USER")
