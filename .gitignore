@@ -1,3 +1,6 @@
 # Generated lead/contact exports — contain personal data, never commit
 attio_import.csv
 *contacts*.csv
+
+# Alpha Mailer runtime artifacts (contain recipient addresses)
+alpha_mailer_audit.log
