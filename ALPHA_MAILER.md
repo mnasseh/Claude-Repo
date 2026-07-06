@@ -78,6 +78,43 @@ Gmail (HTTPS), mais pas envoyer par SMTP.
 Pour un envoi 100 % autonome, planifie le script **sur ton ordinateur** (cron
 ci-dessous) : il tourne chez toi, où le réseau le permet.
 
+## Outbox : envoyer les brouillons marqués « SEND » (depuis ton ordi)
+
+`alpha_mailer_outbox.py` transforme un **brouillon** en **email envoyé**. Il
+tourne sur ta machine (réseau ouvert), scanne les Brouillons Gmail, prend ceux
+dont l'objet commence par **`SEND`**, les envoie par SMTP (mêmes garde-fous :
+liste blanche, plafond 30/j, audit), retire le préfixe, puis supprime le
+brouillon.
+
+Intérêt : la **routine cloud** (ou toi, **depuis le téléphone**) n'a qu'à créer
+un brouillon dont l'objet commence par `SEND` → il part au prochain passage du
+cron, sans dépendre du connecteur Gmail (qui ne sait pas envoyer).
+
+```bash
+python alpha_mailer_outbox.py --dry-run   # liste ce qui partirait, sans rien envoyer
+python alpha_mailer_outbox.py             # envoie + nettoie les brouillons "SEND"
+```
+
+Planifier toutes les 10 min (crontab -e) :
+```
+*/10 * * * * cd /chemin/vers/Claude-Repo && /usr/bin/python3 alpha_mailer_outbox.py >> alpha_mailer_cron.log 2>&1
+```
+
+Prérequis : le `.env` (ou les variables d'env) avec `ALPHA_MAILER_USER`,
+`ALPHA_MAILER_APP_PASSWORD`, `ALPHA_MAILER_WHITELIST`. Le mot de passe
+d'application donne accès **IMAP + SMTP** (lecture des brouillons + envoi).
+
+### Brancher la routine « Alerte emails importants (FR) »
+Dans l'éditeur de la routine, à l'étape qui crée le brouillon récap, rends-la
+**obligatoire** et préfixe l'objet par `SEND ` :
+
+> Crée un brouillon Gmail via `create_draft`, adressé à
+> `m.nasseh@grpalpha.com`, dont l'objet commence par **`SEND `** (ex.
+> `SEND 🔔 Alerte mails — JJ/MM HH:MM | N importants`), avec le même contenu que
+> la page Notion.
+
+L'Outbox sur ton ordi enverra ensuite ce brouillon automatiquement.
+
 ## Envoi programmé (cron)
 
 Génère la ligne crontab prête à coller (envoi quotidien du self-test à 8h00
